@@ -107,8 +107,8 @@ def run(driver,username,password,url,shoe_size,login_time=None,release_time=None
         
         try: 
             LOGGER.info("En Attente verification panier")
-            time.sleep(6)
-            wait_until_visible(driver, xpath="//a[@class='shopping-cart-button']/span[1]", duration=10)
+            time.sleep(10)
+            # wait_until_visible(driver, xpath="//a[@class='shopping-cart-button']/span[1]", duration=10)
             panier_url = "https://www.nike.com/fr/cart"
             LOGGER.info("Page de demande : " + panier_url)
             driver.get(panier_url)
