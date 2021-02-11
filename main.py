@@ -50,20 +50,20 @@ SUBMIT_BUTTON_XPATH = "/html/body/div[2]/div/div/div[2]/div/div/div/div/div[2]/d
 LOGGER = logging.getLogger()
 
 
-def run(driver,username,password,url,login_time=None,page_load_timeout=None):
+def run(driver,username,password,url,login_time=None,release_time=None,page_load_timeout=None):
     
     driver.maximize_window()
     driver.set_page_load_timeout(page_load_timeout)
 
     if login_time:
-        LOGGER.info("Waiting until login time: " + login_time)
+        LOGGER.info("Attendre le temps de connexion : " + login_time)
         pause.until(date_parser.parse(login_time))
 
     skip_retry_login = True
     try:
         login(driver=driver, username=username, password=password)
     except TimeoutException:
-        LOGGER.info("Failed to login due to timeout. Retrying...")
+        LOGGER.info("Impossible de se connecter en raison d'un délai d'attente. Réessayer...")
         skip_retry_login = False
     except Exception as e:
         LOGGER.exception("Failed to login: " + str(e))
@@ -95,15 +95,15 @@ def run(driver,username,password,url,login_time=None,page_load_timeout=None):
 # fonction de connexion au Site 
 def login(driver, username, password):
     try:
-        LOGGER.info("Requesting page: " + NIKE_HOME_URL)
+        LOGGER.info("Page de demande : " + NIKE_HOME_URL)
         driver.get(NIKE_HOME_URL)
     except TimeoutException:
-        LOGGER.info("Page load timed out but continuing anyway")
+        LOGGER.info("Le chargement des pages a été interrompu, mais se poursuit quand même")
 
-    LOGGER.info("Waiting for login fields to become visible")
+    LOGGER.info("Attendre que les champs de connexion deviennent visibles")
     wait_until_visible(driver=driver, xpath="//input[@name='emailAddress']")
 
-    LOGGER.info("Entering username and password")
+    LOGGER.info("Saisie du nom d'utilisateur et du mot de passe")
     email_input = driver.find_element_by_xpath("//input[@name='emailAddress']")
     email_input.clear()
     email_input.send_keys(username)
@@ -112,12 +112,12 @@ def login(driver, username, password):
     password_input.clear()
     password_input.send_keys(password)
 
-    LOGGER.info("Logging in")
+    LOGGER.info("Connexion")
     driver.find_element_by_xpath("//input[@value='SIGN IN']").click()
     
     wait_until_visible(driver=driver, xpath="//a[@data-path='myAccount:greeting']", duration=5)
     
-    LOGGER.info("Successfully logged in")
+    LOGGER.info("Connexion réussie")
 
 
 # Fonction de reconnection au site 
@@ -135,7 +135,7 @@ def retry_login(driver, username, password):
             password_input.clear()
             password_input.send_keys(password)
 
-            LOGGER.info("Logging in")
+            LOGGER.info("Connexion")
             
             try:
                 driver.find_element_by_xpath("//input[@value='SIGN IN']").click()
@@ -144,7 +144,7 @@ def retry_login(driver, username, password):
                     num_retries_attempted += 1
                     continue
                 else:
-                    LOGGER.info("Too many login attempts. Please restart app.")
+                    LOGGER.info("Trop de tentatives de connexion. Veuillez redémarrer l'application.")
                     break
                 	            
             if num_retries_attempted < num_retries:
@@ -154,12 +154,12 @@ def retry_login(driver, username, password):
                 LOGGER.info("Too many login attempts. Please restart app.")
                 break
         except Exception as e:
-            LOGGER.exception("Error dialog did not load, proceed. Error: " + str(e))
+            LOGGER.exception("Le dialogue d'erreur ne s'est pas chargé, continuez. Erreur " + str(e))
             break
 
     wait_until_visible(driver=driver, xpath="//a[@data-path='myAccount:greeting']")
     
-    LOGGER.info("Successfully logged in")
+    LOGGER.info("Connexion réussie")
 
 # Fonction de verification des champs de saisir si elle sont visible
 
@@ -191,7 +191,7 @@ if __name__ == "__main__":
     parser.add_argument("--webdriver-path", required=False, default=None)
     parser.add_argument("--login-time", default=None)
     parser.add_argument("--release-time", default=None)
-    parser.add_argument("--page-load-timeout", type=int, default=2)
+    parser.add_argument("--page-load-timeout", type=int, default=30)
     
     args = parser.parse_args()
     
@@ -213,6 +213,7 @@ if __name__ == "__main__":
         driver = webdriver.Firefox(executable_path=executable_path, firefox_options=options, log_path=os.devnull)
     elif args.driver_type == "chrome":
         options = webdriver.ChromeOptions()
+        options.add_experimental_option('excludeSwitches', ['enable-logging'])
         if args.headless:
             options.add_argument("headless")
         if args.webdriver_path != None:
@@ -229,4 +230,4 @@ if __name__ == "__main__":
     else:
         raise Exception("Specified web browser not supported, only Firefox and Chrome are supported at this point")
     
-    run(driver=driver,username=args.username, password=args.password, url=args.url,login_time=args.login_time,page_load_timeout=args.page_load_timeout)
+    run(driver=driver,username=args.username, password=args.password, url=args.url,login_time=args.login_time,release_time=args.release_time,page_load_timeout=args.page_load_timeout)
