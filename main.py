@@ -18,7 +18,7 @@ from selenium.webdriver.support import expected_conditions as EC
 
 # usermail = "mohamedsaros@gmail.com"
 # userpass = "Momo2020"
-# python main.py --username mohamedsaros@gmail.com --password Momo2020 --url www.nan.ci --driver-type chrome
+# python main.py --username mohamedsaros@gmail.com --password Momo2020 --url https://www.nike.com/fr/launch/t/womens-lahar-low-black --shoe-size EU 38 --driver-type chrome
 
 logging.config.dictConfig({
     "version": 1,
@@ -50,7 +50,7 @@ SUBMIT_BUTTON_XPATH = "/html/body/div[2]/div/div/div[2]/div/div/div/div/div[2]/d
 LOGGER = logging.getLogger()
 
 
-def run(driver,username,password,url,login_time=None,release_time=None,page_load_timeout=None):
+def run(driver,username,password,url,shoe_size,login_time=None,release_time=None,page_load_timeout=None,num_retries=None,dont_quit=True):
     
     driver.maximize_window()
     driver.set_page_load_timeout(page_load_timeout)
@@ -84,14 +84,83 @@ def run(driver,username,password,url,login_time=None,release_time=None,page_load
     skip_select_shipping = False
     skip_payment = False
     num_retries_attempted = 0
+    while True:
+        try:
+            try:
+                LOGGER.info("Page de demande : " + url)
+                driver.get(url)
+            except TimeoutException:
+                LOGGER.info("Le chargement des pages a été interrompu, mais se poursuit quand même")
+                
+            try:
+                select_shoe_size(driver=driver, shoe_size=shoe_size)
+            except Exception as e:
+                # Try refreshing page since you can't click Buy button without selecting size (except if size parameter passed in)
+                LOGGER.exception("N'a pas réussi à sélectionner la pointure : " + str(e))
+                continue
+            
+            try:
+                click_add_panier_button(driver=driver)
+            except Exception as e:
+                LOGGER.exception("Erreur d'Ajout dans panier: " + str(e))                                
+                six.reraise(Exception, e, sys.exc_info()[2])
+                
+        except Exception as e:
+            print('eXecption',str(e))
+            if num_retries and num_retries_attempted < num_retries:
+                num_retries_attempted += 1
+                skip_add_address = False
+                skip_select_shipping = False
+                skip_payment = False
+                continue
+            else:
+                LOGGER.info("L'achat a échoué")
+                break        
+                
+    if dont_quit:
+            LOGGER.info("Prévenir le départ d'un conducteur...")
+            input("Appuyez sur la touche Entrée pour quitter...")
+        
+    driver.quit()
 
 
-
-
-
-
-
-
+def select_shoe_size(driver, shoe_size):
+    LOGGER.info("Action pour voir si on peut payer l'element")
+    wait_until_visible(driver, xpath="//button[@class='ncss-btn-primary-dark btn-lg']", duration=10)
+    size_dispo = driver.find_elements_by_xpath("//li[@class='size va-sm-m d-sm-ib va-sm-t ta-sm-c  ']")
+    taille_list = []
+    disponible = False
+    
+    for tailles in size_dispo:
+        taille = tailles.text
+        x = taille.split()
+        taille_list.append(x[1])
+        
+    LOGGER.info(f"Pointure choisir : EU {shoe_size} ")   
+    if shoe_size in taille_list:
+        LOGGER.info(f"La pointure {shoe_size}  est disponible") 
+        disponible = True
+    else:
+        LOGGER.info(f"La pointure {shoe_size}  est indisponible")
+        
+    if disponible:
+        driver.find_element_by_xpath("//li[@data-qa='size-available']").find_element_by_xpath(f"//button[text()='EU {shoe_size}']").click()
+        LOGGER.info("Pointure chosir avec success")
+    else:
+        LOGGER.info("Basket indisponible pour pointure")
+        
+def click_add_panier_button(driver):
+    xpath = "//button[@class='ncss-btn-primary-dark btn-lg']"
+    
+    LOGGER.info("En attendant  que le bouton ajouter dans panier  soit présent")
+    # element = wait_until_present(driver, xpath=xpath, duration=10) 
+    
+    LOGGER.info("Ajouter au panier")
+    driver.find_element_by_xpath(xpath).click()
+    
+    # driver.execute_script("arguments[0].click();", element)
+    
+    
 # fonction de connexion au Site 
 def login(driver, username, password):
     try:
@@ -107,16 +176,16 @@ def login(driver, username, password):
     email_input = driver.find_element_by_xpath("//input[@name='emailAddress']")
     email_input.clear()
     email_input.send_keys(username)
-    
+
     password_input = driver.find_element_by_xpath("//input[@name='password']")
     password_input.clear()
     password_input.send_keys(password)
 
     LOGGER.info("Connexion")
     driver.find_element_by_xpath("//input[@value='SIGN IN']").click()
-    
+
     wait_until_visible(driver=driver, xpath="//a[@data-path='myAccount:greeting']", duration=5)
-    
+
     LOGGER.info("Connexion réussie")
 
 
@@ -186,12 +255,15 @@ if __name__ == "__main__":
     parser.add_argument("--username", required=True)
     parser.add_argument("--password", required=True)
     parser.add_argument("--url", required=True)
+    parser.add_argument("--shoe-size", required=True)
     parser.add_argument("--driver-type", default="firefox", choices=("firefox", "chrome"))
     parser.add_argument("--headless", action="store_true")
     parser.add_argument("--webdriver-path", required=False, default=None)
     parser.add_argument("--login-time", default=None)
     parser.add_argument("--release-time", default=None)
     parser.add_argument("--page-load-timeout", type=int, default=30)
+    parser.add_argument("--dont-quit", action="store_true")
+    parser.add_argument("--num-retries", type=int, default=1)
     
     args = parser.parse_args()
     
@@ -230,4 +302,4 @@ if __name__ == "__main__":
     else:
         raise Exception("Specified web browser not supported, only Firefox and Chrome are supported at this point")
     
-    run(driver=driver,username=args.username, password=args.password, url=args.url,login_time=args.login_time,release_time=args.release_time,page_load_timeout=args.page_load_timeout)
+    run(driver=driver,username=args.username, password=args.password, url=args.url,shoe_size=args.shoe_size,login_time=args.login_time,release_time=args.release_time,page_load_timeout=args.page_load_timeout,num_retries=args.num_retries,dont_quit=args.dont_quit)
