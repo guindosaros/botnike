@@ -84,44 +84,55 @@ def run(driver,username,password,url,shoe_size,login_time=None,release_time=None
     skip_select_shipping = False
     skip_payment = False
     num_retries_attempted = 0
-    while True:
+    # while True:
+    try:
         try:
-            try:
-                LOGGER.info("Page de demande : " + url)
-                driver.get(url)
-            except TimeoutException:
-                LOGGER.info("Le chargement des pages a été interrompu, mais se poursuit quand même")
-                
-            try:
-                select_shoe_size(driver=driver, shoe_size=shoe_size)
-            except Exception as e:
-                # Try refreshing page since you can't click Buy button without selecting size (except if size parameter passed in)
-                LOGGER.exception("N'a pas réussi à sélectionner la pointure : " + str(e))
-                continue
+            LOGGER.info("Page de demande : " + url)
+            driver.get(url)
+        except TimeoutException:
+            LOGGER.info("Le chargement des pages a été interrompu, mais se poursuit quand même")
             
-            try:
-                click_add_panier_button(driver=driver)
-            except Exception as e:
-                LOGGER.exception("Erreur d'Ajout dans panier: " + str(e))                                
-                six.reraise(Exception, e, sys.exc_info()[2])
-                
+        try:
+            select_shoe_size(driver=driver, shoe_size=shoe_size)
         except Exception as e:
-            print('eXecption',str(e))
-            if num_retries and num_retries_attempted < num_retries:
-                num_retries_attempted += 1
-                skip_add_address = False
-                skip_select_shipping = False
-                skip_payment = False
-                continue
-            else:
-                LOGGER.info("L'achat a échoué")
-                break        
+            # Try refreshing page since you can't click Buy button without selecting size (except if size parameter passed in)
+            LOGGER.exception("N'a pas réussi à sélectionner la pointure : " + str(e))
+            # continue
+        
+        try:
+            click_add_panier_button(driver=driver)
+        except Exception as e:
+            LOGGER.exception("Erreur d'Ajout dans panier: " + str(e))                                
+            six.reraise(Exception, e, sys.exc_info()[2])
+        
+        try: 
+            LOGGER.info("En Attente verification panier")
+            time.sleep(6)
+            wait_until_visible(driver, xpath="//a[@class='shopping-cart-button']/span[1]", duration=10)
+            panier_url = "https://www.nike.com/fr/cart"
+            LOGGER.info("Page de demande : " + panier_url)
+            driver.get(panier_url)
+        except TimeoutException:
+            LOGGER.info("Votre panier est vide")
+        
+            
+    except Exception as e:
+        print('execption',str(e))
+        if num_retries and num_retries_attempted < num_retries:
+            num_retries_attempted += 1
+            skip_add_address = False
+            skip_select_shipping = False
+            skip_payment = False
+            # continue
+        else:
+            LOGGER.info("L'achat a échoué")
+            # break        
                 
     if dont_quit:
             LOGGER.info("Prévenir le départ d'un conducteur...")
             input("Appuyez sur la touche Entrée pour quitter...")
         
-    driver.quit()
+    # driver.quit()
 
 
 def select_shoe_size(driver, shoe_size):
@@ -148,18 +159,24 @@ def select_shoe_size(driver, shoe_size):
         LOGGER.info("Pointure chosir avec success")
     else:
         LOGGER.info("Basket indisponible pour pointure")
-        
+
+       
 def click_add_panier_button(driver):
     xpath = "//button[@class='ncss-btn-primary-dark btn-lg']"
     
     LOGGER.info("En attendant  que le bouton ajouter dans panier  soit présent")
-    # element = wait_until_present(driver, xpath=xpath, duration=10) 
+    element = wait_until_present(driver, xpath=xpath, duration=10) 
     
     LOGGER.info("Ajouter au panier")
-    driver.find_element_by_xpath(xpath).click()
+    # driver.find_element_by_xpath(xpath).click()
+    driver.execute_script("arguments[0].click();", element)
+    LOGGER.info("Basket Ajouter au Panier avec Success")
     
-    # driver.execute_script("arguments[0].click();", element)
-    
+
+# def go_to_panier(driver):
+#    try:
+#     LOGGER.info("Redirection vers le panier")
+#     wait_until_visible(driver, xpath="//a[@class='shopping-cart-button']/span[1]", duration=10)
     
 # fonction de connexion au Site 
 def login(driver, username, password):
