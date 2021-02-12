@@ -315,7 +315,7 @@ def login(driver, username, password):
     except TimeoutException:
         LOGGER.info("Le chargement des pages a été interrompu, mais se poursuit quand même")
         
-    LOGGER.info("Allez sur le boutton de connexion ")    
+    LOGGER.info("modal de connexion ")    
     ## Aller sur la page de connexion
     connexion_xpath = '//button[@class="join-log-in text-color-grey prl3-sm pt2-sm pb2-sm fs12-sm d-sm-b"]'
     connexion=driver.find_element_by_xpath(connexion_xpath)
@@ -328,18 +328,18 @@ def login(driver, username, password):
     mail = driver.find_element_by_xpath(mail_xpath)
     passw = driver.find_element_by_xpath(pass_xpath)
     
-    LOGGER.info("Entrez son mots email et son mots de pass")
+    LOGGER.info("Entrez password et email")
     # Completion des champs
     mail.send_keys(username)
     passw.send_keys(password)
     
-    LOGGER.info("cliquez sur le boutton de connexion")
+    LOGGER.info("clique boutton de connexion")
     ## Connexion sur la page
     bttn_connex_xpath = '/html/body/div[2]/div/div/div[2]/div/div/div/div/div/div/div/div/div/div/div/div/div/div/div[2]/form/div[6]/input'
     bttn_connex = driver.find_element_by_xpath(bttn_connex_xpath)
     bttn_connex.click()
     
-    wait_until_visible(driver=driver, xpath="//a[@data-path='myAccount:greeting']", duration=5)
+    wait_until_visible(driver=driver, xpath="//*[@data-qa='user-name']/*[@data-qa='user-name']", duration=5)
 
     LOGGER.info("Connexion réussie")
 
