@@ -65,7 +65,7 @@ def run(driver,username,password,url,secure,shoe_size,login_time=None,release_ti
 
     skip_retry_login = True
     try:
-        login(driver=driver, username=username, password=password)
+       is_login =  login(driver=driver, username=username, password=password)
     except TimeoutException:
         LOGGER.info("Impossible de se connecter en raison d'un délai d'attente. Réessayer...")
         skip_retry_login = False
@@ -73,12 +73,6 @@ def run(driver,username,password,url,secure,shoe_size,login_time=None,release_ti
         LOGGER.exception("Failed to login: " + str(e))
         six.reraise(Exception, e, sys.exc_info()[2])
     
-    # if skip_retry_login is False:   
-    #     try:
-    #         retry_login(driver=driver, username=username, password=password)
-    #     except Exception as e:
-    #         LOGGER.exception("Failed to retry login: " + str(e))
-    #         six.reraise(Exception, e, sys.exc_info()[2])
      
     if release_time:
         LOGGER.info("Waiting until release time: " + release_time)
@@ -88,93 +82,96 @@ def run(driver,username,password,url,secure,shoe_size,login_time=None,release_ti
     skip_select_shipping = False
     skip_payment = False
     num_retries_attempted = 0
-    # while True:
-    try:
+    if is_login :
+        # while True:
         try:
-            LOGGER.info("Page de demande : " + url)
-            driver.get(url)
-        except TimeoutException:
-            LOGGER.info("Le chargement des pages a été interrompu, mais se poursuit quand même")
-            
-        try:
-           select_size = select_shoe_size(driver=driver, shoe_size=shoe_size)
-        except Exception as e:
-            select_size = False
-            # Try refreshing page since you can't click Buy button without selecting size (except if size parameter passed in)
-            LOGGER.exception("Erreur choix de la pointure" + str(e))
-            # continue
-            
-        if select_size :
             try:
-                add_panier_status = click_add_panier_button(driver=driver)
+                LOGGER.info("Page de demande : " + url)
+                driver.get(url)
+            except TimeoutException:
+                LOGGER.info("Le chargement des pages a été interrompu, mais se poursuit quand même")
+                
+            try:
+                select_size = select_shoe_size(driver=driver, shoe_size=shoe_size)
             except Exception as e:
-                add_panier_status = False
-                LOGGER.exception("Erreur d'Ajout dans panier: " + str(e))                                
-                six.reraise(Exception, e, sys.exc_info()[2])
+                select_size = False
+                # Try refreshing page since you can't click Buy button without selecting size (except if size parameter passed in)
+                LOGGER.exception("Erreur choix de la pointure" + str(e))
+                # continue
                 
-            if add_panier_status :
-                try: 
-                    LOGGER.info("initialisation du  panier")
-                    time.sleep(6)
-                    panier_url = "https://www.nike.com/fr/cart"
-                    LOGGER.info("Page de demande : " + panier_url)
-                    driver.get(panier_url)
-                    # apelle fonction de verification du panier 
-                except TimeoutException:
-                    LOGGER.info("Votre panier est vide")
-
-                try: 
-                    LOGGER.info("Verifacation du panier")
-                    verif_panier = check_panier(driver) 
-                except TimeoutException:
-                    verif_panier = False
-                    LOGGER.exception("verif_panier" + str(e))
+            if select_size :
+                try:
+                    add_panier_status = click_add_panier_button(driver=driver)
+                except Exception as e:
+                    add_panier_status = False
+                    LOGGER.exception("Erreur d'Ajout dans panier: " + str(e))                                
+                    six.reraise(Exception, e, sys.exc_info()[2])
                     
-                # Quand panier contient au moins un element a son sein
-                if verif_panier :
-                    try:
+                if add_panier_status :
+                    try: 
+                        LOGGER.info("initialisation du  panier")
+                        time.sleep(6)
+                        panier_url = "https://www.nike.com/fr/cart"
+                        LOGGER.info("Page de demande : " + panier_url)
+                        driver.get(panier_url)
+                        # apelle fonction de verification du panier 
+                    except TimeoutException:
+                        LOGGER.info("Votre panier est vide")
+
+                    try: 
+                        LOGGER.info("Verifacation du panier")
+                        verif_panier = check_panier(driver) 
+                    except TimeoutException:
+                        verif_panier = False
+                        LOGGER.exception("verif_panier" + str(e))
+                        
+                    # Quand panier contient au moins un element a son sein
+                    if verif_panier :
                         try:
-                            check_url = 'https://www.nike.com/fr/fr/checkout'
-                            LOGGER.info("Attendre le Boutton de payement")
-                            wait_until_visible(driver, xpath="//div[@class='ncss-col-sm-12 css-gajhq5']/button[1]", duration=10)
-                            driver.get(check_url)
-                            LOGGER.info("Page de demande : " + check_url)
-                            time.sleep(3)
-                            status_check_adresse = check_livraison_adresse(driver=driver)
-                            carte_paiement_status = check_carte_paiement_and_secure(driver,secure)
-                        except TimeoutException:
-                            LOGGER.info("Le chargement des pages a été interrompu, mais se poursuit quand même")
-                    except Exception as e:
-                        LOGGER.exception("Impossible d'acceder a la page de payement" + str(e))
-                    
-                    if status_check_adresse :
-                        LOGGER.info("Adresse de livraison ok verification carte paiement")
-                        if carte_paiement_status :
-                            LOGGER.info("carte de paiment present peut passer a la confirmation de la commande")
-                            
+                            try:
+                                check_url = 'https://www.nike.com/fr/fr/checkout'
+                                LOGGER.info("Attendre le Boutton de payement")
+                                wait_until_visible(driver, xpath="//div[@class='ncss-col-sm-12 css-gajhq5']/button[1]", duration=10)
+                                driver.get(check_url)
+                                LOGGER.info("Page de demande : " + check_url)
+                                time.sleep(3)
+                                status_check_adresse = check_livraison_adresse(driver=driver)
+                                carte_paiement_status = check_carte_paiement_and_secure(driver,secure)
+                            except TimeoutException:
+                                LOGGER.info("Le chargement des pages a été interrompu, mais se poursuit quand même")
+                        except Exception as e:
+                            LOGGER.exception("Impossible d'acceder a la page de payement" + str(e))
+                        
+                        if status_check_adresse :
+                            LOGGER.info("Adresse de livraison ok verification carte paiement")
+                            if carte_paiement_status :
+                                LOGGER.info("carte de paiment present peut passer a la confirmation de la commande")
+                                
+                            else:
+                                LOGGER.info("votre compte manque de carte de paiement")
                         else:
-                            LOGGER.info("votre compte manque de carte de paiement")
+                            LOGGER.info("votre compte manque d'adresse de livraison")
                     else:
-                        LOGGER.info("votre compte manque d'adresse de livraison")
+                        LOGGER.info("votre panier est vide")
                 else:
-                    LOGGER.info("votre panier est vide")
+                    LOGGER.info("Erreur d'Ajout du basket au panier")
             else:
-                LOGGER.info("Erreur d'Ajout du basket au panier")
-        else:
-           LOGGER.info("n'a pas réussi à sélectionner la pointure car elle est indisponible:")
+                LOGGER.info("n'a pas réussi à sélectionner la pointure car elle est indisponible:")
 
-    except Exception as e:
-        print('exeception',str(e))
-        if num_retries and num_retries_attempted < num_retries:
-            num_retries_attempted += 1
-            skip_add_address = False
-            skip_select_shipping = False
-            skip_payment = False
-            # continue
-        else:
-            LOGGER.info("L'achat a échoué")
-            # break        
-                
+        except Exception as e:
+            print('exeception',str(e))
+            if num_retries and num_retries_attempted < num_retries:
+                num_retries_attempted += 1
+                skip_add_address = False
+                skip_select_shipping = False
+                skip_payment = False
+                # continue
+            else:
+                LOGGER.info("L'achat a échoué")
+                # break
+    else:       
+        LOGGER.info("Echec de connexion verifier vos information de connexion")  
+                 
     if dont_quit:
             LOGGER.info("Prévenir le départ d'un conducteur...")
             input("Appuyez sur la touche Entrée pour quitter...")
@@ -309,6 +306,7 @@ def validate_commande(driver):
 
 # fonction de connexion au Site 
 def login(driver, username, password):
+    status = False
     try:
         LOGGER.info("Page de demande : " + NIKE_HOME_URL)
         driver.get(NIKE_HOME_URL)
@@ -338,11 +336,15 @@ def login(driver, username, password):
     bttn_connex_xpath = '/html/body/div[2]/div/div/div[2]/div/div/div/div/div/div/div/div/div/div/div/div/div/div/div[2]/form/div[6]/input'
     bttn_connex = driver.find_element_by_xpath(bttn_connex_xpath)
     bttn_connex.click()
-    
-    wait_until_visible(driver=driver, xpath="//*[@data-qa='user-name']/*[@data-qa='user-name']", duration=5)
-
-    LOGGER.info("Connexion réussie")
-
+    try :
+        wait_until_visible(driver=driver, xpath="//*[@data-qa='user-name']/*[@data-qa='user-name']", duration=5)
+        LOGGER.info("Connexion réussie")
+        status = True
+    except Exception as e:
+        status = False
+        LOGGER.exception("Erreur de connexion")
+        
+    return status
 
 def wait_until_visible(driver, xpath=None, class_name=None, el_id=None, duration=10000, frequency=0.01):
     if xpath:
