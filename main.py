@@ -238,7 +238,7 @@ def click_add_panier_button(driver):
         LOGGER.info("Basket Ajouter au Panier avec Success")
         status = True
     except Exception as e:
-        LOGGER.exception("Impossible d'acceder a la page de payement" + str(e))
+        LOGGER.exception("Erreur Ajout du basket dans le panier" + str(e))
     return status
     
 def check_livraison_adresse(driver):
@@ -262,10 +262,44 @@ def check_carte_paiement_and_secure(driver,secure):
         LOGGER.info("verification de presence de carte de paiement")
         xpath = "//label[@class='ncss-label pl4-sm pt3-sm pb3-sm pr4-sm pt2-lg pb2-lg u-full-width']"
         wait_until_present(driver, xpath=xpath, duration=10)
-        LOGGER.info("carte paiement disponible livraison disponible")
+        LOGGER.info("carte paiement disponible")
+        
+        
+        
+        LOGGER.info("Insertion du code secure")
+        time.sleep(10)
+        secure_input = driver.find_element_by_id("cvNumber")
+        secure_input.clear()
+        secure_input.send_keys(secure)
+        
+        # btnxpath = "////*[@class='ncss-brand pt2-sm pr5-sm pb2-sm pl5-sm ncss-btn-accent continueOrderReviewBtn mod-button-width ncss-brand pt3-sm prl5-sm pb3-sm pt2-lg pb2-lg d-sm-b d-md-ib u-uppercase u-rounded fs14-sm']"
+        # element = wait_until_present(driver, xpath=btnxpath, duration=10)
+        # driver.execute_script("arguments[0].click();", element)
+        
+        # LOGGER.info("validation de la carte")
+        # driver.find_element_by_xpath("//input[@value='SIGN IN']").click()
+        
+        # wait_until_visible(driver=driver, xpath="//a[@data-path='myAccount:greeting']", duration=5)
         status = True
     except Exception as e:
         LOGGER.exception("Adresse de livraison non enregistre " + str(e))
+        status = False
+    return status
+
+
+
+def validate_commande(driver):
+    time.sleep(5)
+    status = False
+    try:
+        
+       path = "//div/div/div/section/div/button"
+       element = wait_until_present(driver, xpath=btnxpath, duration=10)
+       driver.execute_script("arguments[0].click();", element)
+       LOGGER.info("commande valider")
+    status = True
+    except Exception as e:
+        LOGGER.exception("Erreur validation commande " + str(e))
         status = False
     return status
 
