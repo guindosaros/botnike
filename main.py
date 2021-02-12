@@ -8,6 +8,7 @@ import re
 import time
 import random
 import json
+from selenium.webdriver import ActionChains
 from selenium import webdriver
 from dateutil import parser as date_parser
 from selenium.webdriver.common.by import By
@@ -45,7 +46,7 @@ logging.config.dictConfig({
 })
 
 
-NIKE_HOME_URL = "https://www.nike.com/login"
+NIKE_HOME_URL = "https://www.nike.com/fr/launch"
 SUBMIT_BUTTON_XPATH = "/html/body/div[2]/div/div/div[2]/div/div/div/div/div[2]/div/div/div[3]/div/div/div[6]/button"
 LOGGER = logging.getLogger()
 
@@ -53,7 +54,10 @@ LOGGER = logging.getLogger()
 def run(driver,username,password,url,secure,shoe_size,login_time=None,release_time=None,page_load_timeout=None,num_retries=None,dont_quit=True):
     
     driver.maximize_window()
+    WebDriverWait(driver,3)
+    driver.implicitly_wait(3)
     driver.set_page_load_timeout(page_load_timeout)
+    
 
     if login_time:
         LOGGER.info("Attendre le temps de connexion : " + login_time)
@@ -69,12 +73,12 @@ def run(driver,username,password,url,secure,shoe_size,login_time=None,release_ti
         LOGGER.exception("Failed to login: " + str(e))
         six.reraise(Exception, e, sys.exc_info()[2])
     
-    if skip_retry_login is False:   
-        try:
-            retry_login(driver=driver, username=username, password=password)
-        except Exception as e:
-            LOGGER.exception("Failed to retry login: " + str(e))
-            six.reraise(Exception, e, sys.exc_info()[2])
+    # if skip_retry_login is False:   
+    #     try:
+    #         retry_login(driver=driver, username=username, password=password)
+    #     except Exception as e:
+    #         LOGGER.exception("Failed to retry login: " + str(e))
+    #         six.reraise(Exception, e, sys.exc_info()[2])
      
     if release_time:
         LOGGER.info("Waiting until release time: " + release_time)
@@ -292,15 +296,15 @@ def validate_commande(driver):
     time.sleep(5)
     status = False
     try:
-        
        path = "//div/div/div/section/div/button"
        element = wait_until_present(driver, xpath=btnxpath, duration=10)
        driver.execute_script("arguments[0].click();", element)
        LOGGER.info("commande valider")
-    status = True
+       status = True
     except Exception as e:
         LOGGER.exception("Erreur validation commande " + str(e))
         status = False
+        
     return status
 
 # fonction de connexion au Site 
@@ -310,69 +314,35 @@ def login(driver, username, password):
         driver.get(NIKE_HOME_URL)
     except TimeoutException:
         LOGGER.info("Le chargement des pages a été interrompu, mais se poursuit quand même")
-
-    LOGGER.info("Attendre que les champs de connexion deviennent visibles")
-    wait_until_visible(driver=driver, xpath="//input[@name='emailAddress']")
-
-    LOGGER.info("Saisie du nom d'utilisateur et du mot de passe")
-    email_input = driver.find_element_by_xpath("//input[@name='emailAddress']")
-    email_input.clear()
-    email_input.send_keys(username)
-
-    password_input = driver.find_element_by_xpath("//input[@name='password']")
-    password_input.clear()
-    password_input.send_keys(password)
-
-    LOGGER.info("Connexion")
-    driver.find_element_by_xpath("//input[@value='SIGN IN']").click()
-
+        
+    LOGGER.info("Allez sur le boutton de connexion ")    
+    ## Aller sur la page de connexion
+    connexion_xpath = '//button[@class="join-log-in text-color-grey prl3-sm pt2-sm pb2-sm fs12-sm d-sm-b"]'
+    connexion=driver.find_element_by_xpath(connexion_xpath)
+    connexion.click()
+    ## Completion du mdp et du pass
+    # Identiifcation des Text box
+    
+    mail_xpath = '/html/body/div[2]/div/div/div[2]/div/div/div/div/div/div/div/div/div/div/div/div/div/div/div[2]/form/div[2]/input'
+    pass_xpath = '/html/body/div[2]/div/div/div[2]/div/div/div/div/div/div/div/div/div/div/div/div/div/div/div[2]/form/div[3]/input'
+    mail = driver.find_element_by_xpath(mail_xpath)
+    passw = driver.find_element_by_xpath(pass_xpath)
+    
+    LOGGER.info("Entrez son mots email et son mots de pass")
+    # Completion des champs
+    mail.send_keys(username)
+    passw.send_keys(password)
+    
+    LOGGER.info("cliquez sur le boutton de connexion")
+    ## Connexion sur la page
+    bttn_connex_xpath = '/html/body/div[2]/div/div/div[2]/div/div/div/div/div/div/div/div/div/div/div/div/div/div/div[2]/form/div[6]/input'
+    bttn_connex = driver.find_element_by_xpath(bttn_connex_xpath)
+    bttn_connex.click()
+    
     wait_until_visible(driver=driver, xpath="//a[@data-path='myAccount:greeting']", duration=5)
 
     LOGGER.info("Connexion réussie")
 
-
-# Fonction de reconnection au site 
-def retry_login(driver, username, password):
-    num_retries_attempted = 0
-    num_retries = 5
-    while True:
-        try:            
-            # Xpath to error dialog button
-            xpath = "/html/body/div[2]/div[3]/div[3]/div/div[2]/input"
-            wait_until_visible(driver=driver, xpath=xpath, duration=5)
-            driver.find_element_by_xpath(xpath).click()
-        
-            password_input = driver.find_element_by_xpath("//input[@name='password']")
-            password_input.clear()
-            password_input.send_keys(password)
-
-            LOGGER.info("Connexion")
-            
-            try:
-                driver.find_element_by_xpath("//input[@value='SIGN IN']").click()
-            except Exception as e:
-                if num_retries_attempted < num_retries:
-                    num_retries_attempted += 1
-                    continue
-                else:
-                    LOGGER.info("Trop de tentatives de connexion. Veuillez redémarrer l'application.")
-                    break
-                	            
-            if num_retries_attempted < num_retries:
-                num_retries_attempted += 1
-                continue
-            else:
-                LOGGER.info("Too many login attempts. Please restart app.")
-                break
-        except Exception as e:
-            LOGGER.exception("Le dialogue d'erreur ne s'est pas chargé, continuez. Erreur " + str(e))
-            break
-
-    wait_until_visible(driver=driver, xpath="//a[@data-path='myAccount:greeting']")
-    
-    LOGGER.info("Connexion réussie")
-
-# Fonction de verification des champs de saisir si elle sont visible
 
 def wait_until_visible(driver, xpath=None, class_name=None, el_id=None, duration=10000, frequency=0.01):
     if xpath:
