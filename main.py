@@ -77,123 +77,117 @@ def run(driver,username,password,url,secure,shoe_size,login_time=None,release_ti
     if release_time:
         LOGGER.info("Waiting until release time: " + release_time)
         pause.until(date_parser.parse(release_time))
-        
-    skip_add_address = False
-    skip_select_shipping = False
-    skip_payment = False
+    
     num_retries_attempted = 0
     if is_login :
-        # while True:
-        try:
+        while True:
             try:
-                LOGGER.info("Page de demande : " + url)
-                driver.get(url)
-            except TimeoutException:
-                LOGGER.info("Le chargement des pages a été interrompu, mais se poursuit quand même")
-                
-            try:
-                select_size = select_shoe_size(driver=driver, shoe_size=shoe_size)
-            except Exception as e:
-                select_size = False
-                # Try refreshing page since you can't click Buy button without selecting size (except if size parameter passed in)
-                LOGGER.exception("Erreur choix de la pointure" + str(e))
-                # continue
-                
-            if select_size :
                 try:
-                    add_panier_status = click_add_panier_button(driver=driver)
-                except Exception as e:
-                    add_panier_status = False
-                    LOGGER.exception("Erreur d'Ajout dans panier: " + str(e))                                
-                    six.reraise(Exception, e, sys.exc_info()[2])
+                    LOGGER.info("Page de demande : " + url)
+                    driver.get(url)
+                except TimeoutException:
+                    LOGGER.info("Le chargement des pages a été interrompu, mais se poursuit quand même")
                     
-                if add_panier_status :
-                    try: 
-                        LOGGER.info("initialisation du  panier")
-                        time.sleep(6)
-                        panier_url = "https://www.nike.com/fr/cart"
-                        LOGGER.info("Page de demande : " + panier_url)
-                        driver.get(panier_url)
-                        # apelle fonction de verification du panier 
-                    except TimeoutException:
-                        LOGGER.info("temps d'attente terminer mais continue")
-
-                    try: 
-                        LOGGER.info("Verification du panier")
-                        verif_panier = check_panier(driver) 
-                    except TimeoutException:
-                        verif_panier = False
-                        LOGGER.exception("verif_panier" + str(e))
+                try:
+                    select_size = select_shoe_size(driver=driver, shoe_size=shoe_size)
+                except Exception as e:
+                    select_size = False
+                    # Try refreshing page since you can't click Buy button without selecting size (except if size parameter passed in)
+                    LOGGER.exception("Erreur choix de la pointure" + str(e))
+                    # continue
+                    
+                if select_size :
+                    try:
+                        add_panier_status = click_add_panier_button(driver=driver)
+                    except Exception as e:
+                        add_panier_status = False
+                        LOGGER.exception("Erreur d'Ajout dans panier: " + str(e))                                
+                        six.reraise(Exception, e, sys.exc_info()[2])
                         
-                    # Quand panier contient au moins un element a son sein
-                    if verif_panier :
-                        try:
+                    if add_panier_status :
+                        try: 
+                            LOGGER.info("initialisation du  panier")
+                            # time.sleep(6)
+                            panier_url = "https://www.nike.com/fr/cart"
+                            LOGGER.info("Page de demande : " + panier_url)
+                            driver.get(panier_url)
+                        except TimeoutException:
+                            LOGGER.info("temps d'attente terminer mais continue")
+
+                        try: 
+                            LOGGER.info("Verification du panier")
+                            verif_panier = check_panier(driver) 
+                        except TimeoutException:
+                            verif_panier = False
+                            LOGGER.exception("verif_panier" + str(e))
+                            
+                        # Quand panier contient au moins un element a son sein
+                        if verif_panier :
                             try:
-                                check_url = 'https://www.nike.com/fr/fr/checkout'
-                                LOGGER.info("Attendre le Boutton de payement")
-                                wait_until_visible(driver, xpath="//div[@class='ncss-col-sm-12 css-gajhq5']/button[1]", duration=10)
-                                driver.get(check_url)
-                                LOGGER.info("Page de demande : " + check_url)
-                                time.sleep(3)
-                                status_check_adresse = check_livraison_adresse(driver=driver)
-                                carte_paiement_status = check_carte_paiement(driver)
-                            except TimeoutException:
-                                LOGGER.info("Le chargement des pages a été interrompu, mais se poursuit quand même")
-                        except Exception as e:
-                            LOGGER.exception("Impossible d'acceder a la page de payement" + str(e))
-                        
-                        if status_check_adresse :
-                            LOGGER.info("Adresse de livraison ok verification carte paiement")
-                            if carte_paiement_status :
-                                LOGGER.info("carte de paiment present saisir votre cvv")
-                                try: 
-                                    check_and_validate_cvv = add_cvv(driver,secure) 
+                                try:
+                                    check_url = 'https://www.nike.com/fr/fr/checkout'
+                                    LOGGER.info("Attendre le Boutton de payement")
+                                    wait_until_visible(driver, xpath="//div[@class='ncss-col-sm-12 css-gajhq5']/button[1]", duration=10)
+                                    driver.get(check_url)
+                                    LOGGER.info("Page de demande : " + check_url)
+                                    # time.sleep(3)
+                                    status_check_adresse = check_livraison_adresse(driver=driver)
+                                    carte_paiement_status = check_carte_paiement(driver)
                                 except TimeoutException:
-                                    check_and_validate_cvv = False
-                                    LOGGER.info("Erreur d'ajout du cvv")   
-                                    
-                                if check_and_validate_cvv :
-                                    LOGGER.info("cvv valide ok passe to paiement")
+                                    LOGGER.info("Le chargement des pages a été interrompu, mais se poursuit quand même")
+                            except Exception as e:
+                                LOGGER.exception("Impossible d'acceder a la page de payement" + str(e))
+                            
+                            if status_check_adresse :
+                                LOGGER.info("Adresse de livraison ok verification carte paiement")
+                                if carte_paiement_status :
+                                    LOGGER.info("carte de paiment present saisir votre cvv")
                                     try: 
-                                      purchase = validate_commande(driver) 
+                                        check_and_validate_cvv = add_cvv(driver,secure) 
                                     except TimeoutException:
-                                        LOGGER.info("La validation de la commande a échoué")
+                                        check_and_validate_cvv = False
+                                        LOGGER.info("Erreur d'ajout du cvv")   
+                                        
+                                    if check_and_validate_cvv :
+                                        LOGGER.info("cvv valide ok passe to paiement")
+                                        try: 
+                                            purchase = validate_commande(driver) 
+                                        except TimeoutException:
+                                            LOGGER.info("La validation de la commande a échoué")
+                                    else:
+                                        LOGGER.info("validation cvv echouer ")
                                 else:
-                                    LOGGER.info("validation cvv echouer ")
+                                    LOGGER.info("votre compte manque de carte de paiement")
                             else:
-                                LOGGER.info("votre compte manque de carte de paiement")
+                                LOGGER.info("votre compte manque d'adresse de livraison")
                         else:
-                            LOGGER.info("votre compte manque d'adresse de livraison")
+                            LOGGER.info("votre panier est vide")
                     else:
-                        LOGGER.info("votre panier est vide")
+                        LOGGER.info("Erreur d'Ajout du basket au panier")
                 else:
-                    LOGGER.info("Erreur d'Ajout du basket au panier")
-            else:
-                LOGGER.info("n'a pas réussi à sélectionner la pointure car elle est indisponible:")
+                    LOGGER.info("n'a pas réussi à sélectionner la pointure car elle est indisponible:")
 
-        except Exception as e:
-            print('exeception',str(e))
-            if num_retries and num_retries_attempted < num_retries:
-                num_retries_attempted += 1
-                skip_add_address = False
-                skip_select_shipping = False
-                skip_payment = False
-                # continue
-            else:
-                LOGGER.info("L'achat a échoué")
-                # break
+            except Exception as e:
+                print('exeception',str(e))
+                if num_retries and num_retries_attempted < num_retries:
+                    num_retries_attempted += 1
+                    continue
+                else:
+                    LOGGER.info("L'achat a échoué")
+                    break
+            if purchase:
+                 LOGGER.info("vous avez passer la commande de votre basket avec success")
+            break
     else:       
         LOGGER.info("Echec de connexion verifier vos information de connexion")
           
-    if purchase:
-        LOGGER.info("vous avez passer la commande de votre basket avec success")
-    # break
+    
       
     if dont_quit:
             LOGGER.info("Prévenir le départ d'un conducteur...")
             input("Appuyez sur la touche Entrée pour quitter...")
         
-    # driver.quit()
+    driver.quit()
 
 def check_panier(driver):
     time.sleep(10)
@@ -260,7 +254,7 @@ def click_add_panier_button(driver):
     return status
     
 def check_livraison_adresse(driver):
-    time.sleep(4)
+    # time.sleep(4)
     status = False
     try:
         LOGGER.info("Verification de l'adresse de livraison")
@@ -307,7 +301,7 @@ def check_carte_paiement(driver):
     return status
 
 def add_cvv(driver,secure):
-    time.sleep(4)
+    time.sleep(3)
     status = False
     try:
         # LOGGER.info("Waiting for cvv to become visible")
@@ -320,7 +314,7 @@ def add_cvv(driver,secure):
         secure_input.send_keys(secure)
         driver.switch_to.parent_frame()
         
-        time.sleep(4)
+        # time.sleep(1)
         LOGGER.info("validation de la carte")
         btnxpath = "/html/body/div[1]/div/div[3]/div/div[2]/div/div/main/section[3]/div/div[1]/div[2]/div[5]/button"
         element = wait_until_present(driver, xpath=btnxpath, duration=10)
@@ -333,7 +327,7 @@ def add_cvv(driver,secure):
     return status
 
 def validate_commande(driver):
-    time.sleep(5)
+    time.sleep(2)
     status = False
     try:
         LOGGER.info("Verification si paiement valide")
@@ -341,7 +335,6 @@ def validate_commande(driver):
         wait_until_present(driver, xpath=xpath, duration=10)
         LOGGER.info("paiement valider ")
         
-        time.sleep(4)
         LOGGER.info("Validation de la commande")
         btnxpath = "/html/body/div[1]/div/div[3]/div/div[2]/div/div/main/section[4]/div/div/section/div/button"
         element = wait_until_present(driver, xpath=btnxpath, duration=10)
@@ -389,7 +382,7 @@ def login(driver, username, password):
     bttn_connex = driver.find_element_by_xpath(bttn_connex_xpath)
     bttn_connex.click()
     try :
-        wait_until_visible(driver=driver, xpath="//*[@data-qa='user-name']/*[@data-qa='user-name']", duration=5)
+        wait_until_visible(driver=driver, xpath="//*[@data-qa='user-name']/*[@data-qa='user-name']", duration=15)
         LOGGER.info("Connexion réussie")
         status = True
     except Exception as e:
