@@ -57,7 +57,7 @@ def run(driver,username,password,url,secure,shoe_size,login_time=None,release_ti
     WebDriverWait(driver,3)
     driver.implicitly_wait(3)
     driver.set_page_load_timeout(page_load_timeout)
-    
+    purchase = False
 
     if login_time:
         LOGGER.info("Attendre le temps de connexion : " + login_time)
@@ -116,10 +116,10 @@ def run(driver,username,password,url,secure,shoe_size,login_time=None,release_ti
                         driver.get(panier_url)
                         # apelle fonction de verification du panier 
                     except TimeoutException:
-                        LOGGER.info("Votre panier est vide")
+                        LOGGER.info("temps d'attente terminer mais continue")
 
                     try: 
-                        LOGGER.info("Verifacation du panier")
+                        LOGGER.info("Verification du panier")
                         verif_panier = check_panier(driver) 
                     except TimeoutException:
                         verif_panier = False
@@ -136,7 +136,7 @@ def run(driver,username,password,url,secure,shoe_size,login_time=None,release_ti
                                 LOGGER.info("Page de demande : " + check_url)
                                 time.sleep(3)
                                 status_check_adresse = check_livraison_adresse(driver=driver)
-                                carte_paiement_status = check_carte_paiement_and_secure(driver,secure)
+                                carte_paiement_status = check_carte_paiement(driver)
                             except TimeoutException:
                                 LOGGER.info("Le chargement des pages a été interrompu, mais se poursuit quand même")
                         except Exception as e:
@@ -145,8 +145,21 @@ def run(driver,username,password,url,secure,shoe_size,login_time=None,release_ti
                         if status_check_adresse :
                             LOGGER.info("Adresse de livraison ok verification carte paiement")
                             if carte_paiement_status :
-                                LOGGER.info("carte de paiment present peut passer a la confirmation de la commande")
-                                
+                                LOGGER.info("carte de paiment present saisir votre cvv")
+                                try: 
+                                    check_and_validate_cvv = add_cvv(driver,secure) 
+                                except TimeoutException:
+                                    check_and_validate_cvv = False
+                                    LOGGER.info("Erreur d'ajout du cvv")   
+                                    
+                                if check_and_validate_cvv :
+                                    LOGGER.info("cvv valide ok passe to paiement")
+                                    try: 
+                                      purchase = validate_commande(driver) 
+                                    except TimeoutException:
+                                        LOGGER.info("La validation de la commande a échoué")
+                                else:
+                                    LOGGER.info("validation cvv echouer ")
                             else:
                                 LOGGER.info("votre compte manque de carte de paiement")
                         else:
@@ -170,8 +183,12 @@ def run(driver,username,password,url,secure,shoe_size,login_time=None,release_ti
                 LOGGER.info("L'achat a échoué")
                 # break
     else:       
-        LOGGER.info("Echec de connexion verifier vos information de connexion")  
-                 
+        LOGGER.info("Echec de connexion verifier vos information de connexion")
+          
+    if purchase:
+        LOGGER.info("vous avez passer la commande de votre basket avec success")
+    # break
+      
     if dont_quit:
             LOGGER.info("Prévenir le départ d'un conducteur...")
             input("Appuyez sur la touche Entrée pour quitter...")
@@ -256,7 +273,7 @@ def check_livraison_adresse(driver):
         status = False
     return status
 
-def check_carte_paiement_and_secure(driver,secure):
+def check_carte_paiement(driver):
     time.sleep(4)
     status = False
     try:
@@ -266,6 +283,33 @@ def check_carte_paiement_and_secure(driver,secure):
         LOGGER.info("carte paiement disponible")
         
         
+        # # LOGGER.info("Waiting for cvv to become visible")
+        # LOGGER.info("Insertion du code secure")
+        # WebDriverWait(driver, 10, 0.01).until(EC.frame_to_be_available_and_switch_to_it(driver.find_element_by_css_selector("iframe[class='credit-card-iframe-cvv mt1 u-full-width']")))
+        # idName = "cvNumber"
+        # wait_until_visible(driver, el_id=idName)
+        # secure_input = driver.find_element_by_id("cvNumber")
+        # secure_input.clear()
+        # secure_input.send_keys(secure)
+        # driver.switch_to.parent_frame()
+        
+        # time.sleep(4)
+        # LOGGER.info("validation de la carte")
+        # btnxpath = "////*[@class='ncss-brand pt2-sm pr5-sm pb2-sm pl5-sm ncss-btn-accent continueOrderReviewBtn mod-button-width ncss-brand pt3-sm prl5-sm pb3-sm pt2-lg pb2-lg d-sm-b d-md-ib u-uppercase u-rounded fs14-sm']"
+        # element = wait_until_present(driver, xpath=btnxpath, duration=10)
+        # driver.execute_script("arguments[0].click();", element)
+        # LOGGER.info("mode de paiement valider")
+
+        status = True
+    except Exception as e:
+        LOGGER.exception("carte de livraison non enregistre " + str(e))
+        status = False
+    return status
+
+def add_cvv(driver,secure):
+    time.sleep(4)
+    status = False
+    try:
         # LOGGER.info("Waiting for cvv to become visible")
         LOGGER.info("Insertion du code secure")
         WebDriverWait(driver, 10, 0.01).until(EC.frame_to_be_available_and_switch_to_it(driver.find_element_by_css_selector("iframe[class='credit-card-iframe-cvv mt1 u-full-width']")))
@@ -276,28 +320,36 @@ def check_carte_paiement_and_secure(driver,secure):
         secure_input.send_keys(secure)
         driver.switch_to.parent_frame()
         
+        time.sleep(4)
         LOGGER.info("validation de la carte")
-        btnxpath = "////*[@class='ncss-brand pt2-sm pr5-sm pb2-sm pl5-sm ncss-btn-accent continueOrderReviewBtn mod-button-width ncss-brand pt3-sm prl5-sm pb3-sm pt2-lg pb2-lg d-sm-b d-md-ib u-uppercase u-rounded fs14-sm']"
+        btnxpath = "/html/body/div[1]/div/div[3]/div/div[2]/div/div/main/section[3]/div/div[1]/div[2]/div[5]/button"
         element = wait_until_present(driver, xpath=btnxpath, duration=10)
         driver.execute_script("arguments[0].click();", element)
-        
+        LOGGER.info("mode de paiement valider")
         status = True
     except Exception as e:
-        LOGGER.exception("Adresse de livraison non enregistre " + str(e))
+        LOGGER.exception("Erreur D'ajout de la cvv " + str(e))
         status = False
     return status
-
-
 
 def validate_commande(driver):
     time.sleep(5)
     status = False
     try:
-       path = "//div/div/div/section/div/button"
-       element = wait_until_present(driver, xpath=btnxpath, duration=10)
-       driver.execute_script("arguments[0].click();", element)
-       LOGGER.info("commande valider")
-       status = True
+        LOGGER.info("Verification si paiement valide")
+        xpath = "/html/body/div[1]/div/div[3]/div/div[2]/div/div/main/section[3]/header/h2/i"
+        wait_until_present(driver, xpath=xpath, duration=10)
+        LOGGER.info("paiement valider ")
+        
+        time.sleep(4)
+        LOGGER.info("Validation de la commande")
+        btnxpath = "/html/body/div[1]/div/div[3]/div/div[2]/div/div/main/section[4]/div/div/section/div/button"
+        element = wait_until_present(driver, xpath=btnxpath, duration=10)
+        driver.execute_script("arguments[0].click();", element)
+        LOGGER.info("validation commande en cours ...... ")
+        wait_until_visible(driver=driver, xpath="/html/body/div[1]/div/div[3]/div/div[2]/div/div/div[2]/div/div/div/div/div", duration=20)
+        LOGGER.info("validation commande terminer")
+        status = True
     except Exception as e:
         LOGGER.exception("Erreur validation commande " + str(e))
         status = False
@@ -363,6 +415,14 @@ def wait_until_present(driver, xpath=None, class_name=None, el_id=None, duration
         return WebDriverWait(driver, duration, frequency).until(EC.presence_of_element_located((By.CLASS_NAME, class_name)))
     elif el_id:
         return WebDriverWait(driver, duration, frequency).until(EC.presence_of_element_located((By.ID, el_id)))   
+
+def wait_until_clickable(driver, xpath=None, class_name=None, el_id=None, duration=10000, frequency=0.01):
+    if xpath:
+        WebDriverWait(driver, duration, frequency).until(EC.element_to_be_clickable((By.XPATH, xpath)))
+    elif class_name:
+        WebDriverWait(driver, duration, frequency).until(EC.element_to_be_clickable((By.CLASS_NAME, class_name)))
+    elif el_id:
+        WebDriverWait(driver, duration, frequency).until(EC.element_to_be_clickable((By.ID, el_id)))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
