@@ -1,22 +1,14 @@
 # import os
 
-# import sys
+import sys
 
 import six
-
-#import pause
 
 import argparse
 
 import logging.config
 
-# import re
-
 import time
-
-# import random
-
-# import json
 
 from selenium.webdriver import ActionChains
 
@@ -40,7 +32,6 @@ from selenium.webdriver.support import expected_conditions as EC
 
 # userpass = "Momo2020"
 
-# python main.py --username mohamedsaros@gmail.com --password Momo2020 --url https://www.nike.com/fr/launch/t/womens-lahar-low-black --secure 333 --shoe-size EU 38 --driver-type chrome
 
 
 
@@ -100,8 +91,7 @@ SUBMIT_BUTTON_XPATH = "/html/body/div[2]/div/div/div[2]/div/div/div/div/div[2]/d
 
 LOGGER = logging.getLogger()
 
-# python main.py --username mohamedsaros@gmail.com --password Momo2020 --url https://www.nike.com/fr/launch/t/womens-lahar-low-blac
-# k --shoe_size 36 --secure 333 --waitTime 3  --path_driver 'C:\chromedriver\chromedriver.exe'
+# python main.py --username mohamedsaros@gmail.com --password Momo2020 --url https://www.nike.com/fr/launch/t/womens-lahar-low-blac k --shoe_size 36 --secure 333 --waitTime 3  --path_driver 'C:\chromedriver\chromedriver.exe'
 
 
 
@@ -118,10 +108,10 @@ def run(driver,username,password,url,secure,shoe_size,waitTime,num_retries):
     purchase = False
 
     is_login = False
-
+    
     try:
 
-       is_login =  login(driver=driver, username=username, password=password,waitTime=waitTime)
+       is_login =  login(driver=driver, username=username, password=password,waitTime=int(waitTime))
 
     except TimeoutException:
 
@@ -154,20 +144,26 @@ def run(driver,username,password,url,secure,shoe_size,waitTime,num_retries):
 
                 try:
 
-                    select_size = select_shoe_size(driver=driver, shoe_size=shoe_size,waitTime=waitTime)
+                    select_size = select_shoe_size(driver=driver, shoe_size=shoe_size,waitTime=int(waitTime))
 
                 except Exception as e:
                     select_size = False
                     LOGGER.exception("Erreur choix de la pointure" + str(e))
-                    continue
+                    # continue
+                    if num_retries_attempted < num_retries:
+                        num_retries_attempted += 1
+                        continue
 
+                    else:
+                        LOGGER.info('Erreur choix de la pointure')
+                        break
                     
 
                 if select_size :
 
                     try:
 
-                        add_panier_status = click_add_panier_button(driver=driver,waitTime=waitTime)
+                        add_panier_status = click_add_panier_button(driver=driver,waitTime=int(waitTime))
 
                     except Exception as e:
 
@@ -203,7 +199,7 @@ def run(driver,username,password,url,secure,shoe_size,waitTime,num_retries):
 
                             LOGGER.info("Verification du panier")
 
-                            verif_panier = check_panier(driver,waitTime) 
+                            verif_panier = check_panier(driver,int(waitTime)) 
 
                         except TimeoutException:
 
@@ -223,7 +219,7 @@ def run(driver,username,password,url,secure,shoe_size,waitTime,num_retries):
 
                                     LOGGER.info("Attendre le Boutton de payement")
 
-                                    wait_until_visible(driver, xpath="//div[@class='ncss-col-sm-12 css-gajhq5']/button[1]", duration=waitTime)
+                                    wait_until_visible(driver, xpath="//div[@class='ncss-col-sm-12 css-gajhq5']/button[1]", duration=int(waitTime))
 
                                     driver.get(check_url)
 
@@ -231,9 +227,9 @@ def run(driver,username,password,url,secure,shoe_size,waitTime,num_retries):
 
                                     # time.sleep(3)
 
-                                    status_check_adresse = check_livraison_adresse(driver=driver,waitTime=waitTime)
+                                    status_check_adresse = check_livraison_adresse(driver=driver,waitTime=int(waitTime))
 
-                                    carte_paiement_status = check_carte_paiement(driver,waitTime)
+                                    carte_paiement_status = check_carte_paiement(driver,int(waitTime))
 
                                 except TimeoutException:
 
@@ -255,7 +251,7 @@ def run(driver,username,password,url,secure,shoe_size,waitTime,num_retries):
 
                                     try: 
 
-                                        check_and_validate_cvv = add_cvv(driver,secure,waitTime) 
+                                        check_and_validate_cvv = add_cvv(driver,int(secure),int(waitTime)) 
 
                                     except TimeoutException:
 
@@ -271,7 +267,7 @@ def run(driver,username,password,url,secure,shoe_size,waitTime,num_retries):
 
                                         try: 
 
-                                            purchase = validate_commande(driver,waitTime) 
+                                            purchase = validate_commande(driver,int(waitTime)) 
 
                                         except TimeoutException:
 
@@ -679,7 +675,7 @@ def login(driver, username, password,waitTime):
 
     try :
 
-        wait_until_visible(driver=driver, xpath="//*[@data-qa='user-name']/*[@data-qa='user-name']", duration=waitTime)
+        wait_until_visible(driver=driver, xpath="//*[@data-qa='user-name']/*[@data-qa='user-name']", duration=int(waitTime))
 
         LOGGER.info("Connexion réussie")
 
