@@ -1,0 +1,12 @@
+pywin32>=224
+
+[all]
+cryptography
+pandas
+matplotlib
+flask
+pillow
+
+[pro]
+cryptography
+Jinja2
