@@ -8,7 +8,7 @@ from selenium.webdriver.common.by import By
 import time
 import argparse
 
-########### Fonctions ###########
+########### Fonctions ###########d
 ### E1 : Connexion
 def user_connexion(usermail, userpass, path_driver,wait_time =10):
     url = "https://www.nike.com/fr/launch"
@@ -58,7 +58,7 @@ def check_size_available(size_dispo,size):
             break
     return available
 ### Fonction principale
-def add_shoe_basket(driver, shoe_url, size,wait_time=10):
+def add_shoe_basket(driver, shoe_url, size,wait_time=20):
     driver.get(shoe_url)
     sizes_xpath = "//li[@class='size va-sm-m d-sm-ib va-sm-t ta-sm-c  ']"
     wait = WebDriverWait(driver, wait_time).until(EC.visibility_of_element_located((By.XPATH,sizes_xpath)))
