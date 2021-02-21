@@ -18,13 +18,14 @@ def app():
     [ sg.Frame('SNKRS : ', [[ sg.Text('Acheter Automatiquement vos Basket sur SNKRS '),]],)],
     # Information frame
     [ sg.Frame('Information Basket:', [[ sg.Text(),  sg.Column([
-                                    [sg.Text('Basket-url', size=(10, 1)), sg.InputText(key='-NAME-')],
-                                    [sg.Text('Taille-Basket', size=(10, 1)), sg.InputText(key='-ADDRESS-')],
-                                    [sg.Text('Waitime', size=(10, 1)), sg.InputText(key='-PHONE-')],
-                                    ], size=(235, 350), pad=(50, 50))]])], ], pad=(50, 50))
+                                    [sg.Text('Basket-url :', size=(10, 1)), sg.InputText(key='-NAME-')],
+                                    [sg.Text('Taille-Basket :', size=(10, 1)), sg.InputText(key='-ADDRESS-')],
+                                    [sg.Text('Waitime :', size=(10, 1)), sg.InputText(key='-PHONE-')],
+                                    [sg.Text("Date:", size=(10, 1)), sg.InputText(key='-Date-')],
+                                    ], size=(235, 150), pad=(50, 50))]])], ], pad=(50, 50))
                                     
-    col3 =  sg.Column([[ sg.Frame('Actions:', [[ sg.Column([[ sg.Button('Save'),  sg.Button(
-    'Clear'),  sg.Button('Delete'), ]], size=(450, 60), pad=(0, 0))]])]], pad=(0, 0))
+    col3 =  sg.Column([[ sg.Frame('Actions:', [[ sg.Column([[ sg.Button('Commander'),  sg.Button(
+    'Annuler'),]], size=(450, 60), pad=(0, 0))]])]], pad=(0, 0))
     
     # STEP 1 define the layout
     layout = [ 
