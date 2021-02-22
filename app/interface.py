@@ -8,16 +8,18 @@ def app():
     # sg.set_options(element_padding=(0, 0))
 
      # ------ Menu Definition ------ #
-    menu_def = [['&Accueil'],
-                ['&Configuration'],
-                ['&Aide'],
-                ['&Quitter'],]
+    menu_def = [
+                    ['&Accueil'],
+                    ['&Configuration'],
+                    ['&Aide', '&A-propos', '&Guide'],
+                    ['&Quitter'],
+                ]
 
     col1 = sg.Column([
     # Categories frame
-    [ sg.Frame('SNKRS : ', [[ sg.Text('Acheter Automatiquement vos baskets sur SNKRS ',font=("Verdana", "10", "bold")),]],)],
+    [ sg.Frame(' SNKRS : ', [[ sg.Text('Acheter Automatiquement vos baskets sur SNKRS ',font=("Verdana", "10", "bold")),]],)],
     # Information frame
-    [ sg.Frame('Information basket:', [[ sg.Text(),  sg.Column([
+    [ sg.Frame(' Information basket :', [[ sg.Text(),  sg.Column([
                                     [sg.Text('basket-url :', justification='right',size =( 10, 1)), sg.InputText(key='-URL-')],
                                     [sg.Text('taille-basket :' , justification='right',size =(10, 1)), sg.InputText(key='-TAILLE-')],
                                     [sg.Text('waitime :' , justification='right',size =(10, 1)), sg.InputText(key='-WAITIME-')],
@@ -29,7 +31,7 @@ def app():
 
     
                                     
-    col3 =  sg.Column([], pad=(50, 50))
+    col3 =  sg.Column([[sg.Output(size=(75, 12))],], pad=(50, 50))
     
     # STEP 1 define the layout
     layout = [ 
@@ -49,9 +51,9 @@ def app():
     while True:
         event, values = window.read()   # Read the event that happened and the values dictionary
         print(event, values)
-        if event == sg.WIN_CLOSED or event == 'Exit':     # If user closed window with X or if user clicked "Exit" button then exit
+        if event == sg.WIN_CLOSED or event == 'Help':     # If user closed window with X or if user clicked "Exit" button then exit
             break
-        if event == 'Button':
+        if event == 'Commander':
             print('You pressed the button')
     window.close()
 
