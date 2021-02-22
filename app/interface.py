@@ -4,7 +4,7 @@ import PySimpleGUI as sg
 
 def app():
 
-    sg.theme('DarkAmber')  # No gray windows please!
+    sg.theme('SandyBeach')  # No gray windows please!
     # sg.set_options(element_padding=(0, 0))
 
      # ------ Menu Definition ------ #
@@ -15,23 +15,27 @@ def app():
 
     col1 = sg.Column([
     # Categories frame
-    [ sg.Frame('SNKRS : ', [[ sg.Text('Acheter Automatiquement vos Basket sur SNKRS '),]],)],
+    [ sg.Frame('SNKRS : ', [[ sg.Text('Acheter Automatiquement vos baskets sur SNKRS ',font=("Verdana", "10", "bold")),]],)],
     # Information frame
-    [ sg.Frame('Information Basket:', [[ sg.Text(),  sg.Column([
-                                    [sg.Text('Basket-url :', size=(10, 1)), sg.InputText(key='-NAME-')],
-                                    [sg.Text('Taille-Basket :', size=(10, 1)), sg.InputText(key='-ADDRESS-')],
-                                    [sg.Text('Waitime :', size=(10, 1)), sg.InputText(key='-PHONE-')],
-                                    [sg.Text("Date:", size=(10, 1)), sg.InputText(key='-Date-')],
-                                    ], size=(235, 150), pad=(50, 50))]])], ], pad=(50, 50))
+    [ sg.Frame('Information basket:', [[ sg.Text(),  sg.Column([
+                                    [sg.Text('basket-url :', justification='right',size =( 10, 1)), sg.InputText(key='-URL-')],
+                                    [sg.Text('taille-basket :' , justification='right',size =(10, 1)), sg.InputText(key='-TAILLE-')],
+                                    [sg.Text('waitime :' , justification='right',size =(10, 1)), sg.InputText(key='-WAITIME-')],
+                                    [sg.Text("date: " , justification='right',size =(10, 1)), sg.InputText(key='-DATE-')],
+                                    ], size=(400, 200), pad=(50, 50))]])], 
+
+    [ sg.Frame('Actions:', [[ sg.Column([[ sg.Button('Commander'),  sg.Button(
+    'Annuler'),]], size=(400, 50), pad=(0, 0))]])]], pad=(50, 50))
+
+    
                                     
-    col3 =  sg.Column([[ sg.Frame('Actions:', [[ sg.Column([[ sg.Button('Commander'),  sg.Button(
-    'Annuler'),]], size=(450, 60), pad=(0, 0))]])]], pad=(0, 0))
+    col3 =  sg.Column([], pad=(50, 50))
     
     # STEP 1 define the layout
     layout = [ 
                 [sg.Menu(menu_def, tearoff=False, pad=(20,1))],
                 [col1],
-                [col3]
+                [col3],
             ]
 
     #STEP 2 - create the window
