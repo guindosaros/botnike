@@ -3,9 +3,12 @@ from json import (load as jsonload, dump as jsondump)
 from os import path
 import webbrowser
 
+
+
 SETTINGS_FILE = path.join(path.dirname(__file__), r'settings_file.cfg')
 DEFAULT_SETTINGS = {'email': '',  'theme': sg.theme(), 'password' : '','cvv': '', 'webdriver': ''}
 SETTINGS_KEYS_TO_ELEMENT_KEYS = {'email': '-EMAIL-' , 'theme': '-THEME-', 'password' : '-PASSWORD-','cvv' : '-CVV-','webdriver' : '-WEBDRIVER-'}
+APP_ICONE = 'skrs.ico'
 
 def load_settings(settings_file, default_settings):
     try:
@@ -29,7 +32,7 @@ def save_settings(settings_file, settings, values):
     with open(settings_file, 'w') as f:
         jsondump(settings, f)
 
-    sg.popup('Paramètres sauvegardés',icon= 'skrs.ico',)
+    sg.popup('Paramètres sauvegardés',icon= APP_ICONE,)
 
     
 
@@ -47,7 +50,7 @@ def create_settings_window(settings):
                 [TextLabel('Theme'),sg.Combo(sg.theme_list(), size=(20, 20), key='-THEME-')],
                 [sg.Button('Save'), sg.Button('Exit')]  ]
 
-    window = sg.Window('Configuration', layout,  icon= 'skrs.ico', keep_on_top=True, finalize=True)
+    window = sg.Window('Configuration', layout,  icon= APP_ICONE, keep_on_top=True, finalize=True)
 
     for key in SETTINGS_KEYS_TO_ELEMENT_KEYS:   # update window with the values read from settings file
         try:
@@ -99,7 +102,7 @@ def app_windows(settings):
     #STEP 2 - create the window
     window = sg.Window('SNKRS Boot Application', 
     layout, grab_anywhere=True,
-    icon= 'skrs.ico',
+    icon= APP_ICONE,
     location = (50,50)
     )
 
@@ -132,11 +135,11 @@ def app_principal():
                         'Chrome: 87.0.4280.141',
                         'Node.js: 12.18.3',
                         'V8: 8.7.220.31-electron.0',
-                        'OS: Windows_NT x64 10.0.19042',icon= 'skrs.ico', location = (300,400)  , grab_anywhere=True)
+                        'OS: Windows_NT x64 10.0.19042',icon= APP_ICONE, location = (300,400)  , grab_anywhere=True)
         
         if event == 'Guide':
-            print('Guide commande')
-            webbrowser.open_new(r'file://C:\path\to\file.pdf')
+            webbrowser.open_new(r'plan.pdf')
+
     window.close()
 
 if __name__ == '__main__':      
