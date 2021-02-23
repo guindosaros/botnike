@@ -1,7 +1,7 @@
 import PySimpleGUI as sg
 from json import (load as jsonload, dump as jsondump)
 from os import path
-
+import webbrowser
 
 SETTINGS_FILE = path.join(path.dirname(__file__), r'settings_file.cfg')
 DEFAULT_SETTINGS = {'email': '',  'theme': sg.theme(), 'password' : '','cvv': '', 'webdriver': ''}
@@ -12,7 +12,7 @@ def load_settings(settings_file, default_settings):
         with open(settings_file, 'r') as f:
             settings = jsonload(f)
     except Exception as e:
-        sg.popup_quick_message(f'exception {e}', "Aucun fichier de configuration n'a été trouvé.", keep_on_top=True, background_color='red', text_color='white')
+        sg.popup_quick_message(f"Aucun fichier de configuration n'a été trouvé.", icon= 'skrs.ico', keep_on_top=True, text_color='white')
         settings = default_settings
         save_settings(settings_file, settings, None)
     return settings
@@ -29,7 +29,7 @@ def save_settings(settings_file, settings, values):
     with open(settings_file, 'w') as f:
         jsondump(settings, f)
 
-    sg.popup('Paramètres sauvegardés')
+    sg.popup('Paramètres sauvegardés',icon= 'skrs.ico',)
 
     
 
@@ -47,28 +47,28 @@ def create_settings_window(settings):
                 [TextLabel('Theme'),sg.Combo(sg.theme_list(), size=(20, 20), key='-THEME-')],
                 [sg.Button('Save'), sg.Button('Exit')]  ]
 
-    window = sg.Window('Settings', layout, keep_on_top=True, finalize=True)
+    window = sg.Window('Configuration', layout,  icon= 'skrs.ico', keep_on_top=True, finalize=True)
 
     for key in SETTINGS_KEYS_TO_ELEMENT_KEYS:   # update window with the values read from settings file
         try:
             window[SETTINGS_KEYS_TO_ELEMENT_KEYS[key]].update(value=settings[key])
         except Exception as e:
-            print(f'Problem updating PySimpleGUI window from settings. Key = {key}')
+            print(f'Problème de mise à jour de la fenêtre PySimpleGUI à partir des paramètres. Clé = {key}')
 
     return window
 
 
 
-def app():
+def app_windows(settings):
 
-    sg.theme('SandyBeach')  # No gray windows please!
+    sg.theme(settings['theme'])  # No gray windows please!
     # sg.set_options(element_padding=(0, 0))
 
      # ------ Menu Definition ------ #
     menu_def = [
                     ['&Accueil'],
                     ['&Configuration'],
-                    ['&Aide', '&A-propos', '&Guide'],
+                    ['&Aide', ['&Guide', '&A-propos']],
                     ['&Quitter'],
                 ]
 
@@ -103,23 +103,41 @@ def app():
     location = (50,50)
     )
 
-    # STEP3 - the event loop
-    while True:
-        event, values = window.read()   # Read the event that happened and the values dictionary
-        print(event, values)
-        if event == sg.WIN_CLOSED or event == 'Quitter':     # If user closed window with X or if user clicked "Exit" button then exit
-            break
-        if event == 'A-propos':
-            # window.disappear()
-            sg.popup('About this program','Version 1.0', 'PySimpleGUI rocks...', grab_anywhere=True,icon= 'skrs.ico',
-             location = (0,50))
-            # window.reappear()
+    return window
 
-        if event == 'Commander':
-            print('You pressed the button')
+
+
+def app_principal():
+    window, settings = None, load_settings(SETTINGS_FILE, DEFAULT_SETTINGS )
+    while True:             # Event Loop
+        if window is None:
+            window = app_windows(settings)
+
+        event, values = window.read()
+        if event in (None, 'Exit'):
+            break
+
+        if event == 'Configuration':
+            event, values = create_settings_window(settings).read(close=True)
+            if event == 'Save':
+                window.close()
+                window = None
+                save_settings(SETTINGS_FILE, settings, values)
+
+        if event == 'A-propos':
+            sg.popup('Version: 1.53.2 (user setup)',
+                        'Commit: 622cb03f7e070a9670c94bae1a45d78d7181fbd4',
+                        'Date: 2021-02-11T11:48:04.245Z',
+                        'Electron: 11.2.1',
+                        'Chrome: 87.0.4280.141',
+                        'Node.js: 12.18.3',
+                        'V8: 8.7.220.31-electron.0',
+                        'OS: Windows_NT x64 10.0.19042',icon= 'skrs.ico', location = (300,400)  , grab_anywhere=True)
+        
+        if event == 'Guide':
+            print('Guide commande')
+            webbrowser.open_new(r'file://C:\path\to\file.pdf')
     window.close()
 
-
-
 if __name__ == '__main__':      
-        app()
+        app_principal()
