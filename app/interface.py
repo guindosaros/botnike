@@ -44,7 +44,7 @@ def create_settings_window(settings):
 
     layout = [  [sg.Text('Settings', font='Any 15')],
                 [TextLabel('Email'), sg.Input(key='-EMAIL-')],
-                [TextLabel('Password'), sg.Input(key='-PASSWORD-',password_char=True)],
+                [TextLabel('Password'), sg.Input(key='-PASSWORD-',password_char='*')],
                 [TextLabel('Cvv'), sg.Input(key='-CVV-')],
                 [TextLabel('Webdriver'), sg.Input(key='-WEBDRIVER-')],
                 [TextLabel('Theme'),sg.Combo(sg.theme_list(), size=(20, 20), key='-THEME-')],
@@ -77,6 +77,7 @@ def app_windows(settings):
 
     col1 = sg.Column([
     # Categories frame
+    [ sg.Frame(' SNKRS : ', [[ sg.Text('Acheter Automatiquement vos baskets sur SNKRS ',font=("Verdana", "10", "bold")),]],)],
     # Information frame
     [ sg.Frame(' Information basket :', [[ sg.Text(),  sg.Column([
                                     [sg.Text('basket-url :', font='Any 13', justification='right',size =( 10, 1)), sg.InputText(key='-URL-')],
@@ -88,14 +89,12 @@ def app_windows(settings):
     [ sg.Frame('Actions:', [[ sg.Column([[ sg.Button('Commander'),  sg.Button(
     'Annuler'),]], size=(400, 50), pad=(0, 0))]])]],  pad=(50, 50))
                                  
-    # col3 =  [sg.Frame('Output', font='Any 15', layout=[
-    #                     [sg.Output(size=(65, 15), font='Courier 10')]])], 
-    
     # STEP 1 define the layout
     layout = [ 
                 [sg.Menu(menu_def, tearoff=False, pad=(20,1))],
+                [sg.Text("Manque : ",key='-COL-')],
                 [col1],
-                [sg.Frame('Ecran', font='Any 15', layout=[[sg.Output(size=(70, 12), font='Courier 10')]],pad=(50, 50))],
+                [sg.Frame('Ecran', font='Any 15', layout=[[sg.Output(size=(70, 12), background_color='black', text_color='white', font='Courier 10')]],pad=(50, 50))],
             ]
 
     #STEP 2 - create the window
@@ -117,7 +116,18 @@ def app_principal():
 
         event, values = window.read()
         
+        # user connexion information
 
+        email = settings['email']
+        password = settings['password']
+        cvv  =  settings['cvv']
+        path = settings['webdriver']
+
+        # get basket informatipn
+        url = values['-URL-']
+        taille = values['-TAILLE-']
+        date =  values['-DATE-']
+        waitime = values['-WAITIME-']
 
         if event in (None, 'Quitter'):
             break
@@ -144,7 +154,14 @@ def app_principal():
         
 
         if event == 'Commander':
-            print('commander boutton')
+            if email !='' and not email.isspace() and password != '' and not password.isspace() and cvv != '' and not cvv.isspace()  and path != '' and not path.isspace():
+                if url !='' and not url.isspace()  and date !='' and not date.isspace() and taille !='' and not taille.isspace() and waitime !='' and not waitime.isspace():
+                    print('tous est okk')
+                    
+                else:
+                    sg.popup('Veillez remplir correctements les inforamtion du baskets', location = (300,400)  , grab_anywhere=True,icon= APP_ICONE,)
+            else:
+                sg.popup('Veillez à configurer votre Bot avant de pouvoir passer une commande.', location = (300,400)  , grab_anywhere=True,icon= APP_ICONE,)
 
 
     window.close()
