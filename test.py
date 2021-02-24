@@ -1,98 +1,84 @@
 import PySimpleGUI as sg
-from json import (load as jsonload, dump as jsondump)
-from os import path
-
-"""
-    A simple "settings" implementation.  Load/Edit/Save settings for your programs
-    Uses json file format which makes it trivial to integrate into a Python program.  If you can
-    put your data into a dictionary, you can save it as a settings file.
-    
-    Note that it attempts to use a lookup dictionary to convert from the settings file to keys used in 
-    your settings window.  Some element's "update" methods may not work correctly for some elements.
-    
-    Copyright 2020 PySimpleGUI.com
-    Licensed under LGPL-3
-"""
-
-SETTINGS_FILE = path.join(path.dirname(__file__), r'settings_file.cfg')
-DEFAULT_SETTINGS = {'max_users': 10, 'user_data_folder': None , 'theme': sg.theme(), 'zipcode' : '94102'}
-# "Map" from the settings dictionary keys to the window's element keys
-SETTINGS_KEYS_TO_ELEMENT_KEYS = {'max_users': '-MAX USERS-', 'user_data_folder': '-USER FOLDER-' , 'theme': '-THEME-', 'zipcode' : '-ZIPCODE-'}
-
-########################################## Load/Save Settings File ##########################################
-def load_settings(settings_file, default_settings):
-    try:
-        with open(settings_file, 'r') as f:
-            settings = jsonload(f)
-    except Exception as e:
-        sg.popup_quick_message(f'exception {e}', 'No settings file found... will create one for you', keep_on_top=True, background_color='red', text_color='white')
-        settings = default_settings
-        save_settings(settings_file, settings, None)
-    return settings
-
-
-def save_settings(settings_file, settings, values):
-    if values:      # if there are stuff specified by another window, fill in those values
-        for key in SETTINGS_KEYS_TO_ELEMENT_KEYS:  # update window with the values read from settings file
-            try:
-                settings[key] = values[SETTINGS_KEYS_TO_ELEMENT_KEYS[key]]
-            except Exception as e:
-                print(f'Problem updating settings from window values. Key = {key}')
-
-    with open(settings_file, 'w') as f:
-        jsondump(settings, f)
-
-    sg.popup('Settings saved')
-
-########################################## Make a settings window ##########################################
-def create_settings_window(settings):
-    sg.theme(settings['theme'])
-
-    def TextLabel(text): return sg.Text(text+':', justification='r', size=(15,1))
-
-    layout = [  [sg.Text('Settings', font='Any 15')],
-                [TextLabel('Max Users'), sg.Input(key='-MAX USERS-')],
-                [TextLabel('User Folder'),sg.Input(key='-USER FOLDER-'), sg.FolderBrowse(target='-USER FOLDER-')],
-                [TextLabel('Zipcode'),sg.Input(key='-ZIPCODE-')],
-                [TextLabel('Theme'),sg.Combo(sg.theme_list(), size=(20, 20), key='-THEME-')],
-                [sg.Button('Save'), sg.Button('Exit')]  ]
-
-    window = sg.Window('Settings', layout, keep_on_top=True, finalize=True)
-
-    for key in SETTINGS_KEYS_TO_ELEMENT_KEYS:   # update window with the values read from settings file
-        try:
-            window[SETTINGS_KEYS_TO_ELEMENT_KEYS[key]].update(value=settings[key])
-        except Exception as e:
-            print(f'Problem updating PySimpleGUI window from settings. Key = {key}')
-
-    return window
-
-########################################## Main Program Window & Event Loop ##########################################
-def create_main_window(settings):
-    sg.theme(settings['theme'])
-
-    layout = [[sg.T('This is my main application')],
-              [sg.T('Add your primary window stuff in here')],
-              [sg.B('Ok'), sg.B('Exit'), sg.B('Change Settings')]]
-
-    return sg.Window('Main Application', layout)
-
+import subprocess
+import shutil
+import os
+import sys
+'''
+    Make a "Windows os" executable with PyInstaller
+'''
 
 def main():
-    window, settings = None, load_settings(SETTINGS_FILE, DEFAULT_SETTINGS )
+    sg.theme('LightGreen')
 
-    while True:             # Event Loop
-        if window is None:
-            window = create_main_window(settings)
+    layout = [[sg.Text('PyInstaller EXE Creator', font='Any 15')],
+              [sg.Text('Source Python File'), sg.Input(key='-sourcefile-', size=(45, 1)),
+               sg.FileBrowse(file_types=(("Python Files", "*.py"),))],
+              [sg.Text('Icon File'), sg.Input(key='-iconfile-', size=(45, 1)),
+               sg.FileBrowse(file_types=(("Icon Files", "*.ico"),))],
+              [sg.Frame('Output', font='Any 15', layout=[
+                        [sg.Output(size=(65, 15), font='Courier 10')]])],
+              [sg.Button('Make EXE', bind_return_key=True),
+               sg.Button('Quit', button_color=('white', 'firebrick3')) ],
+              [sg.Text('Made with PySimpleGUI (www.PySimpleGUI.org)', auto_size_text=True, font='Courier 8')]]
+
+    window = sg.Window('PySimpleGUI EXE Maker', layout, auto_size_text=False, auto_size_buttons=False, default_element_size=(20,1), text_justification='right')
+    # ---===--- Loop taking in user input --- #
+    while True:
 
         event, values = window.read()
-        if event in (None, 'Exit'):
+        if event in ('Exit', 'Quit', None):
             break
-        if event == 'Change Settings':
-            event, values = create_settings_window(settings).read(close=True)
-            if event == 'Save':
-                window.close()
-                window = None
-                save_settings(SETTINGS_FILE, settings, values)
-    window.close()
-main()
+
+        source_file = values['-sourcefile-']
+        icon_file = values['-iconfile-']
+
+        icon_option = '-i "{}"'.format(icon_file) if icon_file else ''
+        source_path, source_filename = os.path.split(source_file)
+        workpath_option = '--workpath "{}"'.format(source_path)
+        dispath_option = '--distpath "{}"'.format(source_path)
+        specpath_option = '--specpath "{}"'.format(source_path)
+        folder_to_remove = os.path.join(source_path, source_filename[:-3])
+        file_to_remove = os.path.join(source_path, source_filename[:-3]+'.spec')
+        command_line = 'pyinstaller -wF --clean "{}" {} {} {} {}'.format(source_file, icon_option, workpath_option, dispath_option, specpath_option)
+
+        if event == 'Make EXE':
+            try:
+                print(command_line)
+                print('Making EXE...the program has NOT locked up...')
+                window.refresh()
+                # print('Running command {}'.format(command_line))
+                out, err = runCommand(command_line, window=window)
+                shutil.rmtree(folder_to_remove)
+                os.remove(file_to_remove)
+                print('**** DONE ****')
+            except:
+                sg.PopupError('Something went wrong', 'close this window and copy command line from text printed out in main window','Here is the output from the run', out)
+                print('Copy and paste this line into the command prompt to manually run PyInstaller:\n\n', command_line)
+
+
+def runCommand(cmd, timeout=None, window=None):
+    """ run shell command
+	@param cmd: command to execute
+	@param timeout: timeout for command execution
+	@return: (return code from command, command output)
+	"""
+
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    output = ''
+    for line in p.stdout:
+        line = line.decode(errors='replace' if (sys.version_info) < (3, 5)
+                           else 'backslashreplace').rstrip()
+        output += line
+        print(line)
+        if window:
+            window.Refresh()
+
+    retval = p.wait(timeout)
+
+    return (retval, output)
+
+
+if __name__ == '__main__':
+    main()
+
+

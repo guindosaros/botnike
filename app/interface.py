@@ -44,7 +44,7 @@ def create_settings_window(settings):
 
     layout = [  [sg.Text('Settings', font='Any 15')],
                 [TextLabel('Email'), sg.Input(key='-EMAIL-')],
-                [TextLabel('Password'), sg.Input(key='-PASSWORD-')],
+                [TextLabel('Password'), sg.Input(key='-PASSWORD-',password_char=True)],
                 [TextLabel('Cvv'), sg.Input(key='-CVV-')],
                 [TextLabel('Webdriver'), sg.Input(key='-WEBDRIVER-')],
                 [TextLabel('Theme'),sg.Combo(sg.theme_list(), size=(20, 20), key='-THEME-')],
@@ -69,34 +69,33 @@ def app_windows(settings):
 
      # ------ Menu Definition ------ #
     menu_def = [
-                    ['&Accueil'],
-                    ['&Configuration'],
+                    ['&Fichier', ['&Configuration', '&Quitter' ]],
                     ['&Aide', ['&Guide', '&A-propos']],
-                    ['&Quitter'],
+                     # ['&Quitter'],
                 ]
+    [sg.Text('basket-url :', justification='right',size =( 10, 1)), sg.InputText(key='-URL-')],
 
     col1 = sg.Column([
     # Categories frame
-    [ sg.Frame(' SNKRS : ', [[ sg.Text('Acheter Automatiquement vos baskets sur SNKRS ',font=("Verdana", "10", "bold")),]],)],
     # Information frame
     [ sg.Frame(' Information basket :', [[ sg.Text(),  sg.Column([
-                                    [sg.Text('basket-url :', justification='right',size =( 10, 1)), sg.InputText(key='-URL-')],
-                                    [sg.Text('taille-basket :' , justification='right',size =(10, 1)), sg.InputText(key='-TAILLE-')],
-                                    [sg.Text('waitime :' , justification='right',size =(10, 1)), sg.InputText(key='-WAITIME-')],
-                                    [sg.Text("date: " , justification='right',size =(10, 1)), sg.InputText(key='-DATE-')],
-                                    ], size=(400, 200), pad=(50, 50))]])], 
+                                    [sg.Text('basket-url :', font='Any 13', justification='right',size =( 10, 1)), sg.InputText(key='-URL-')],
+                                    [sg.Text('taille :' ,font='Any 13', justification='right',size =(10, 1)), sg.InputText(key='-TAILLE-')],
+                                    [sg.Text('waitime :' , font='Any 13', justification='right',size =(10, 1)), sg.InputText(key='-WAITIME-')],
+                                    [sg.Text("date: " , font='Any 13', justification='right',size =(10, 1)), sg.InputText(key='-DATE-')],
+                                    ], size=(400, 190), pad=(50, 50))]])], 
 
     [ sg.Frame('Actions:', [[ sg.Column([[ sg.Button('Commander'),  sg.Button(
-    'Annuler'),]], size=(400, 50), pad=(0, 0))]])]], pad=(50, 50))
-
-                                    
-    col3 =  sg.Column([[sg.Output(size=(75, 12))],], pad=(50, 50))
+    'Annuler'),]], size=(400, 50), pad=(0, 0))]])]],  pad=(50, 50))
+                                 
+    # col3 =  [sg.Frame('Output', font='Any 15', layout=[
+    #                     [sg.Output(size=(65, 15), font='Courier 10')]])], 
     
     # STEP 1 define the layout
     layout = [ 
                 [sg.Menu(menu_def, tearoff=False, pad=(20,1))],
                 [col1],
-                [col3],
+                [sg.Frame('Ecran', font='Any 15', layout=[[sg.Output(size=(70, 12), font='Courier 10')]],pad=(50, 50))],
             ]
 
     #STEP 2 - create the window
@@ -117,7 +116,10 @@ def app_principal():
             window = app_windows(settings)
 
         event, values = window.read()
-        if event in (None, 'Exit'):
+        
+
+
+        if event in (None, 'Quitter'):
             break
 
         if event == 'Configuration':
@@ -139,6 +141,11 @@ def app_principal():
         
         if event == 'Guide':
             webbrowser.open_new(r'plan.pdf')
+        
+
+        if event == 'Commander':
+            print('commander boutton')
+
 
     window.close()
 
