@@ -1,7 +1,10 @@
 import PySimpleGUI as sg
 from json import (load as jsonload, dump as jsondump)
 from os import path
+import subprocess
+import shutil
 import webbrowser
+import sys
 
 
 
@@ -80,11 +83,11 @@ def app_windows(settings):
     [ sg.Frame(' SNKRS : ', [[ sg.Text('Acheter Automatiquement vos baskets sur SNKRS ',font=("Verdana", "10", "bold")),]],)],
     # Information frame
     [ sg.Frame(' Information basket :', [[ sg.Text(),  sg.Column([
-                                    [sg.Text('basket-url :', font='Any 13', justification='right',size =( 10, 1)), sg.InputText(key='-URL-')],
-                                    [sg.Text('taille :' ,font='Any 13', justification='right',size =(10, 1)), sg.InputText(key='-TAILLE-')],
-                                    [sg.Text('waitime :' , font='Any 13', justification='right',size =(10, 1)), sg.InputText(key='-WAITIME-')],
-                                    [sg.Text("date: " , font='Any 13', justification='right',size =(10, 1)), sg.InputText(key='-DATE-')],
-                                    ], size=(400, 190), pad=(50, 50))]])], 
+                                    [sg.Text('Basket-url :', font='Any 13', justification='right',size =( 10, 1)), sg.InputText(key='-URL-')],
+                                    [sg.Text('Taille :' ,font='Any 13', justification='right',size =(10, 1)), sg.InputText(key='-TAILLE-')],
+                                    [sg.Text('Waitime :' , font='Any 13', justification='right',size =(10, 1)), sg.InputText(key='-WAITIME-')],
+                                    [sg.Text("Date: " , font='Any 13', justification='right',size =(10, 1)), sg.InputText(key='-DATE-')],
+                                    ], size=(500, 190), pad=(50, 50))]])], 
 
     [ sg.Frame('Actions:', [[ sg.Column([[ sg.Button('Commander'),  sg.Button(
     'Annuler'),]], size=(400, 50), pad=(0, 0))]])]],  pad=(50, 50))
@@ -92,9 +95,8 @@ def app_windows(settings):
     # STEP 1 define the layout
     layout = [ 
                 [sg.Menu(menu_def, tearoff=False, pad=(20,1))],
-                [sg.Text("Manque : ",key='-COL-')],
                 [col1],
-                [sg.Frame('Ecran', font='Any 15', layout=[[sg.Output(size=(70, 12), background_color='black', text_color='white', font='Courier 10')]],pad=(50, 50))],
+                [sg.Frame('Ecran', font='Any 15', layout=[[sg.Output(size=(90, 12), background_color='black', text_color='white', font='Courier 10')]],pad=(50, 50))],
             ]
 
     #STEP 2 - create the window
@@ -156,15 +158,45 @@ def app_principal():
         if event == 'Commander':
             if email !='' and not email.isspace() and password != '' and not password.isspace() and cvv != '' and not cvv.isspace()  and path != '' and not path.isspace():
                 if url !='' and not url.isspace()  and date !='' and not date.isspace() and taille !='' and not taille.isspace() and waitime !='' and not waitime.isspace():
-                    print('tous est okk')
-                    
+                    py = subprocess.run(["python", "--version"], capture_output=True, text=True)
+                    if "python 3" in py.stdout.lower():
+                        python = "python"
+                    else:
+                        python = "python3"
+
+                    command_line = f'{python} scripts.py --usermail {email} --password {password} --shoe_url {url} --shoe_size {taille} --secure {cvv} --exec_time "{date}" --waitTime {waitime} --path_driver {path}'
+                    print(command_line)
+                    window.refresh()
+                    out, err = runCommand(command_line, window=window)
+
                 else:
-                    sg.popup('Veillez remplir correctements les inforamtion du baskets', location = (300,400)  , grab_anywhere=True,icon= APP_ICONE,)
+                    sg.PopupError('Veillez remplir correctements les inforamtion du baskets', location = (300,400)  , grab_anywhere=True,icon= APP_ICONE,)
             else:
-                sg.popup('Veillez à configurer votre Bot avant de pouvoir passer une commande.', location = (300,400)  , grab_anywhere=True,icon= APP_ICONE,)
+                sg.PopupError('Veillez à configurer votre Bot avant de pouvoir passer une commande.', location = (300,400)  , grab_anywhere=True,icon= APP_ICONE,)
 
 
     window.close()
+
+def runCommand(cmd, timeout=None, window=None):
+    """ run shell command
+	@param cmd: command to execute
+	@param timeout: timeout for command execution
+	@return: (return code from command, command output)
+	"""
+
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    output = ''
+    for line in p.stdout:
+        line = line.decode(errors='replace' if (sys.version_info) < (3, 5)
+                           else 'backslashreplace').rstrip()
+        output += line
+        if window:
+            window.Refresh()
+
+    retval = p.wait(timeout)
+
+    return (retval, output)
+
 
 if __name__ == '__main__':      
         app_principal()

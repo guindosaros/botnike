@@ -1,51 +1,83 @@
-import subprocess
-import sys
 import PySimpleGUI as sg
-
-"""
-	Demo Program - Realtime output of a shell command in the window
-		Shows how you can run a long-running subprocess and have the output
-		be displayed in realtime in the window.
-"""
-
-sg.theme('Dark Blue 3')
+import subprocess
+import shutil
+import os
+import sys
+'''
+    Make a "Windows os" executable with PyInstaller
+'''
 
 def main():
-	layout = [
-				[sg.Output(size=(110,30), background_color='black', text_color='white')],
-				[sg.T('Promt> '), sg.Input(key='-IN-', do_not_clear=False)],
-				[sg.Button('Run', bind_return_key=True), sg.Button('Exit')] ]
+    sg.theme('LightGreen')
 
-	window = sg.Window('Realtime Shell Command Output', layout)
+    layout = [[sg.Text('PyInstaller EXE Creator', font='Any 15')],
+              [sg.Text('Source Python File'), sg.Input(key='-sourcefile-', size=(45, 1)),
+               sg.FileBrowse(file_types=(("Python Files", "*.py"),))],
+              [sg.Text('Icon File'), sg.Input(key='-iconfile-', size=(45, 1)),
+               sg.FileBrowse(file_types=(("Icon Files", "*.ico"),))],
+              [sg.Frame('Output', font='Any 15', layout=[
+                        [sg.Output(size=(65, 15), font='Courier 10')]])],
+              [sg.Button('Make EXE', bind_return_key=True),
+               sg.Button('Quit', button_color=('white', 'firebrick3')) ],
+              [sg.Text('Made with PySimpleGUI (www.PySimpleGUI.org)', auto_size_text=True, font='Courier 8')]]
 
-	while True:             # Event Loop
-		event, values = window.read()
-		# print(event, values)
-		if event in (sg.WIN_CLOSED, 'Exit'):
-			break
-		elif event == 'Run':
-			runCommand(cmd=values['-IN-'], window=window)
-	window.close()
+    window = sg.Window('PySimpleGUI EXE Maker', layout, auto_size_text=False, auto_size_buttons=False, default_element_size=(20,1), text_justification='right')
+    # ---===--- Loop taking in user input --- #
+    while True:
+
+        event, values = window.read()
+        if event in ('Exit', 'Quit', None):
+            break
+
+        source_file = values['-sourcefile-']
+        icon_file = values['-iconfile-']
+
+        icon_option = '-i "{}"'.format(icon_file) if icon_file else ''
+        source_path, source_filename = os.path.split(source_file)
+        workpath_option = '--workpath "{}"'.format(source_path)
+        dispath_option = '--distpath "{}"'.format(source_path)
+        specpath_option = '--specpath "{}"'.format(source_path)
+        folder_to_remove = os.path.join(source_path, source_filename[:-3])
+        file_to_remove = os.path.join(source_path, source_filename[:-3]+'.spec')
+        command_line = 'pyinstaller -wF --clean "{}" {} {} {} {}'.format(source_file, icon_option, workpath_option, dispath_option, specpath_option)
+
+        if event == 'Make EXE':
+            try:
+                window.refresh()
+                # print('Running command {}'.format(command_line))
+                out, err = runCommand(command_line, window=window)
+                shutil.rmtree(folder_to_remove)
+                os.remove(file_to_remove)
+                print('**** DONE ****')
+            except:
+                sg.PopupError('Something went wrong', 'close this window and copy command line from text printed out in main window','Here is the output from the run', out)
+                print('Copy and paste this line into the command prompt to manually run PyInstaller:\n\n', command_line)
 
 
 def runCommand(cmd, timeout=None, window=None):
-	nop = None
-	""" run shell command
+    """ run shell command
+
 	@param cmd: command to execute
 	@param timeout: timeout for command execution
-	@param window: the PySimpleGUI window that the output is going to (needed to do refresh on)
+
 	@return: (return code from command, command output)
 	"""
-	p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-	output = ''
-	for line in p.stdout:
-		line = line.decode(errors='replace' if (sys.version_info) < (3, 5) else 'backslashreplace').rstrip()
-		output += line
-		print(line)
-		window.refresh() if window else nop        # yes, a 1-line if, so shoot me
 
-	retval = p.wait(timeout)
-	return (retval, output)
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    output = ''
+    for line in p.stdout:
+        line = line.decode(errors='replace' if (sys.version_info) < (3, 5)
+                           else 'backslashreplace').rstrip()
+        output += line
+		print(output)
+        print(line)
+        if window:
+            window.Refresh()
+
+    retval = p.wait(timeout)
+
+    return (retval, output)
 
 
-main()
+if __name__ == '__main__':
+    main()
